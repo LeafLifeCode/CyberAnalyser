@@ -901,7 +901,7 @@ with tab_delivery:
                         except Exception as exc:
                             st.error(f"Authentication Failed: {exc}")
 
-                st.caption("💡 Don't have an active OTP? Open the Cyber Portal at [http://localhost:8502](http://localhost:8502), select your officer profile, and click 'Generate OTP'.")
+                st.caption("💡 Don't have an active OTP? Switch to the **🛡️ Cyber Portal** page in the left sidebar to generate your one-time code.")
         else:
             # Active authenticated session bar
             st.markdown(

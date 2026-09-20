@@ -1,29 +1,16 @@
-# Core CrewAI framework
 crewai>=0.80.0
 crewai-tools>=0.14.0
-
-# LLM backend - Gemini 1.5 Flash (free tier, 1500 req/day)
 langchain-google-genai>=2.0.0
 google-generativeai>=0.8.0
-
-# Data generation & Analysis
 faker>=25.0.0
 numpy>=1.26.0
 pandas>=2.1.0
 pydantic>=2.7.0
-
-# Geospatial & Visualisation
 pydeck>=0.8.0
-
-# Streamlit UI
 streamlit>=1.39.0
 streamlit-autorefresh>=1.0.1
-
-# Security, Authentication & RFC 6238 TOTP
 pyotp>=2.9.0
 PyJWT>=2.8.0
 cryptography>=42.0.0
-
-# Utilities
 python-dotenv>=1.0.0
 pytz>=2024.1

@@ -1,0 +1,26 @@
+# Environment & Secrets (NEVER COMMIT SENSITIVE API KEYS)
+.env
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+
+# Local Temporary / PIP Cache
+D:\pip-tmp
+D:\pip-cache
+
+# Local Runtime & Session Files
+cyber_portal_session_log.txt
+portal_sessions.json
+*.log

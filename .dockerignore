@@ -1,0 +1,27 @@
+# Python virtual environments (Host architecture binaries must NOT be copied into container)
+.venv/
+venv/
+ENV/
+
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Git repository metadata
+.git/
+.gitignore
+.gitattributes
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+
+# Windows launcher scripts
+*.bat
+*.ps1
+
+# Temporary pip caches
+D:\pip-tmp
+D:\pip-cache

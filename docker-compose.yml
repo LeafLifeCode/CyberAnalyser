@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # Port 8501: Analyst & Intelligence Map (Read-Only + OTP Action Gate)
+  analyst-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pafcci_analyst_app
+    command: streamlit run app.py --server.port 8501 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false
+    ports:
+      - "8501:8501"
+    volumes:
+      # Live volume mount: code edits on host reflect instantly inside container
+      # and CSV/TXT logs stay synchronized with Cyber Portal
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  # Port 8502: Privileged Cyber Portal & Authority OTP Dispatcher
+  cyber-portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pafcci_cyber_portal
+    command: streamlit run portal_app.py --server.port 8502 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false
+    ports:
+      - "8502:8502"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

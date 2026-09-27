@@ -40,6 +40,11 @@ from cyber_portal.bridge import (
     commit_authority_actions,
     sign_out_user,
     get_user_status,
+    generate_otp_for_user,
+    get_all_user_statuses,
+    get_authority_actions,
+    get_recent_session_logs,
+    clear_all_data,
 )
 
 # ── Page Config ──────────────────────────────────────────────────────────────
@@ -73,8 +78,573 @@ st.markdown("""
         background-color: #0D3280 !important;
         border-radius: 8px;
     }
+}
+
+/* ── Base & Background ─────────────────────────────────────────────────────── */
+html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+    background-color: var(--pafcci-bg-base) !important;
+    color: var(--pafcci-text-primary) !important;
+}
+[data-testid="stSidebar"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    border-right: 1px solid var(--pafcci-border) !important;
+}
+[data-testid="stSidebar"] * {
+    color: var(--pafcci-text-primary);
+}
+
+/* ── Hide native sidebar padding & layout ──────────────────────────────────── */
+[data-testid="stMain"] {
+    margin-left: 0 !important;
+    padding: 0.5rem 0.5rem !important;
+}
+
+/* ── Right Controls Panel Sticky Container (Column 2) ──────────────────────── */
+div[data-testid="column"]:nth-child(2) > div {
+    background: var(--pafcci-bg-surface) !important;
+    border: 1px solid var(--pafcci-border) !important;
+    border-radius: 10px !important;
+    padding: 16px 14px !important;
+    position: sticky !important;
+    top: 0.5rem !important;
+    max-height: calc(100vh - 1rem) !important;
+    overflow-y: auto !important;
+    box-shadow: var(--pafcci-card-shadow) !important;
+}
+
+/* ── Cards / Panels / Containers ───────────────────────────────────────────── */
+/* Style tiny icons inside expander headers */
+[data-testid="stExpander"] summary img {
+    width: 14px !important;
+    height: 14px !important;
+    vertical-align: -2px !important;
+    margin-right: 8px !important;
+    display: inline-block !important;
+    filter: var(--pafcci-img-filter);
+}
+
+[data-testid="stExpander"], [data-testid="stForm"],
+div[class*="stTabs"] > div[role="tabpanel"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    border: 1px solid var(--pafcci-border) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--pafcci-card-shadow) !important;
+}
+
+/* ── Zero Gap Between Horizontal Tabs ───────────────────────────────────────── */
+div[role="tablist"] {
+    gap: 0px !important;
+    border-bottom: 1px solid var(--pafcci-border) !important;
+}
+[data-testid="stTabs"] [role="tab"] {
+    margin-right: 0px !important;
+    margin-left: 0px !important;
+    border-radius: 6px 6px 0 0 !important;
+    border: 1px solid var(--pafcci-border) !important;
+    border-right: none !important;
+    padding: 8px 18px !important;
+    background-color: var(--pafcci-bg-elevated) !important;
+    color: var(--pafcci-text-secondary) !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.01em !important;
+    transition: all 0.15s ease !important;
+}
+[data-testid="stTabs"] [role="tab"]:last-child {
+    border-right: 1px solid var(--pafcci-border) !important;
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    color: var(--pafcci-primary) !important;
+    border-color: var(--pafcci-border) !important;
+    border-bottom: 2px solid var(--pafcci-primary) !important;
+    font-weight: 600 !important;
+}
+
+/* ── Component Buttons in Sidebar: [ {icon} {Title} ] ───────────────────── */
+div[data-testid="stSidebar"] div[data-testid="stButton"] button {
+    text-align: left !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    padding: 11px 14px !important;
+    border-radius: 8px !important;
+    margin-bottom: 8px !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.01em !important;
+    box-shadow: var(--pafcci-card-shadow) !important;
+    transition: all 0.15s ease !important;
+}
+
+/* Outline drawn icon inside button */
+div[data-testid="stSidebar"] div[data-testid="stButton"] button img {
+    width: 20px !important;
+    height: 20px !important;
+    margin-right: 10px !important;
+    vertical-align: middle !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+    filter: var(--pafcci-img-filter);
+}
+
+/* Inactive button */
+div[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="secondary"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    border: 1px solid var(--pafcci-border) !important;
+    color: var(--pafcci-text-primary) !important;
+}
+div[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="secondary"]:hover {
+    background-color: var(--pafcci-bg-elevated) !important;
+    border-color: var(--pafcci-primary) !important;
+    color: var(--pafcci-primary) !important;
+    transform: translateX(2px) !important;
+}
+
+/* Active button (Primary) */
+div[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="primary"] {
+    background-color: var(--pafcci-primary) !important;
+    border: 1px solid var(--pafcci-primary-hover) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+}
+div[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="primary"] img {
+    filter: brightness(0) invert(1) !important;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+button[kind="primary"], [data-testid="baseButton-primary"] {
+    background-color: var(--pafcci-primary) !important;
+    color: #FFFFFF !important;
+    border: 1px solid var(--pafcci-primary-hover) !important;
+    border-radius: 7px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em !important;
+    box-shadow: var(--pafcci-card-shadow) !important;
+    transition: background 0.15s ease, transform 0.1s ease !important;
+}
+button[kind="primary"]:hover, [data-testid="baseButton-primary"]:hover {
+    background-color: var(--pafcci-primary-hover) !important;
+    border-color: var(--pafcci-primary-dark) !important;
+    transform: translateY(-1px) !important;
+}
+button[kind="primary"]:active {
+    background-color: var(--pafcci-primary-dark) !important;
+    transform: translateY(0) !important;
+}
+
+button[kind="secondary"], [data-testid="baseButton-secondary"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    color: var(--pafcci-text-primary) !important;
+    border: 1px solid var(--pafcci-border) !important;
+    border-radius: 7px !important;
+    font-weight: 500 !important;
+    box-shadow: var(--pafcci-card-shadow) !important;
+    transition: all 0.15s ease !important;
+}
+button[kind="secondary"]:hover, [data-testid="baseButton-secondary"]:hover {
+    background-color: var(--pafcci-bg-elevated) !important;
+    border-color: var(--pafcci-primary) !important;
+    color: var(--pafcci-primary) !important;
+}
+button[kind="secondary"]:active {
+    background-color: var(--pafcci-primary-muted) !important;
+}
+button:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    background-color: var(--pafcci-bg-elevated) !important;
+    color: var(--pafcci-text-disabled) !important;
+    border-color: var(--pafcci-border) !important;
+}
+
+/* ── Metrics & KPI cards ───────────────────────────────────────────────────── */
+[data-testid="metric-container"] {
+    background-color: var(--pafcci-bg-surface);
+    border: 1px solid var(--pafcci-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    box-shadow: var(--pafcci-card-shadow);
+    transition: border-color 0.2s;
+}
+[data-testid="metric-container"]:hover {
+    border-color: var(--pafcci-primary);
+}
+[data-testid="metric-container"] label {
+    color: var(--pafcci-text-secondary) !important;
+    font-size: 0.75rem !important;
+}
+[data-testid="metric-container"] [data-testid="stMetricValue"] {
+    color: var(--pafcci-text-primary) !important;
+    font-weight: 700 !important;
+}
+
+/* ── Dataframes / Tables ───────────────────────────────────────────────────── */
+[data-testid="stDataFrame"] {
+    border: 1px solid var(--pafcci-border) !important;
+    border-radius: 6px;
+}
+.stDataFrame thead th {
+    background-color: var(--pafcci-bg-elevated) !important;
+    color: var(--pafcci-text-primary) !important;
+    font-weight: 600 !important;
+}
+.stDataFrame tbody tr:nth-child(even) {
+    background-color: var(--pafcci-table-even-bg) !important;
+}
+.stDataFrame tbody tr:hover {
+    background-color: var(--pafcci-table-hover-bg) !important;
+}
+.stDataFrame tbody td {
+    color: var(--pafcci-text-primary);
+    border-color: var(--pafcci-border);
+}
+
+/* ── Inputs / Selects ──────────────────────────────────────────────────────── */
+[data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea,
+[data-testid="stSelectbox"] select, div[data-baseweb="select"] > div {
+    background-color: var(--pafcci-input-bg) !important;
+    color: var(--pafcci-text-primary) !important;
+    border: 1px solid var(--pafcci-border) !important;
+    border-radius: 7px !important;
+}
+[data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus {
+    border-color: var(--pafcci-primary) !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* ── Sliders ───────────────────────────────────────────────────────────────── */
+[data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {
+    background-color: var(--pafcci-primary) !important;
+}
+
+/* ── Alerts / Banners ──────────────────────────────────────────────────────── */
+[data-testid="stAlert"][data-type="success"]  { background-color: var(--pafcci-alert-success-bg) !important; border-left: 4px solid var(--pafcci-risk-low) !important; color: var(--pafcci-text-primary) !important; }
+[data-testid="stAlert"][data-type="error"]    { background-color: var(--pafcci-alert-error-bg) !important; border-left: 4px solid var(--pafcci-risk-high) !important; color: var(--pafcci-text-primary) !important; }
+[data-testid="stAlert"][data-type="warning"]  { background-color: var(--pafcci-alert-warn-bg) !important; border-left: 4px solid var(--pafcci-risk-medium) !important; color: var(--pafcci-text-primary) !important; }
+[data-testid="stAlert"][data-type="info"]     { background-color: var(--pafcci-alert-info-bg) !important; border-left: 4px solid var(--pafcci-info) !important; color: var(--pafcci-text-primary) !important; }
+
+/* ── Text hierarchy ────────────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 { color: var(--pafcci-text-primary) !important; font-weight: 700 !important; letter-spacing: -0.01em; }
+small, .stCaption, [data-testid="stCaptionContainer"] { color: var(--pafcci-text-secondary) !important; }
+code {
+    background-color: var(--pafcci-code-bg);
+    color: var(--pafcci-code-text);
+    border: 1px solid var(--pafcci-code-border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.85em;
+}
+
+/* ── Dividers ──────────────────────────────────────────────────────────────── */
+hr { border-color: var(--pafcci-border) !important; }
+
+/* ── Radio / Checkbox ──────────────────────────────────────────────────────── */
+[data-testid="stRadio"] label { color: var(--pafcci-text-primary) !important; }
+[data-testid="stRadio"] [data-baseweb="radio"] [data-checked="true"] span { background-color: var(--pafcci-primary) !important; }
+[data-testid="stCheckbox"] [data-baseweb="checkbox"] { border-color: var(--pafcci-primary) !important; }
+
+/* ── SMS / Evidence boxes ──────────────────────────────────────────────────── */
+.sms-box {
+    background: var(--pafcci-bg-elevated);
+    border: 1px solid var(--pafcci-border);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    color: var(--pafcci-text-primary);
+    max-height: 400px;
+    overflow-y: auto;
+}
+.evidence-box {
+    background: var(--pafcci-alert-success-bg);
+    border-left: 4px solid var(--pafcci-risk-low);
+    border: 1px solid var(--pafcci-border);
+    padding: 10px;
+    font-family: monospace;
+    font-size: 13px;
+    color: var(--pafcci-text-primary);
+    border-radius: 4px;
+}
+
+/* ── Risk colors ───────────────────────────────────────────────────────────── */
+.risk-CRITICAL { color: var(--pafcci-risk-high); font-weight: bold; }
+.risk-HIGH     { color: var(--pafcci-risk-medium); font-weight: bold; }
+.risk-MEDIUM   { color: var(--pafcci-info); font-weight: bold; }
+.risk-LOW      { color: var(--pafcci-risk-low); font-weight: bold; }
+
+/* ── Role accent pills ─────────────────────────────────────────────────────── */
+.role-lea    { background-color: rgba(99, 102, 241, 0.12); color: #6366F1; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+.role-bank   { background-color: rgba(13, 148, 136, 0.12); color: #0D9488; border: 1px solid rgba(13, 148, 136, 0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+.role-devops { background-color: rgba(100, 116, 139, 0.12); color: #64748B; border: 1px solid rgba(100, 116, 139, 0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+
+/* ── Pydeck map ────────────────────────────────────────────────────────────── */
+.stPydeckChart, iframe[title="pydeck.Deck"], div[data-testid="stDeckGlJsonContainer"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    border-radius: 8px;
+    border: 1px solid var(--pafcci-border);
+}
+
+/* ── Dialog modals ─────────────────────────────────────────────────────────── */
+[data-testid="stModal"] > div {
+    background-color: var(--pafcci-bg-surface) !important;
+    border: 1px solid var(--pafcci-border) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--pafcci-bg-base); }
+::-webkit-scrollbar-thumb { background: var(--pafcci-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--pafcci-text-disabled); }
+
+/* ── Inline SVG & Image Filter ─────────────────────────────────────────────── */
+svg.pafcci-icon { stroke: var(--pafcci-icon-color) !important; }
+svg text,
+.vega-embed svg text,
+[data-testid="stVegaLiteChart"] svg text,
+[data-testid="stDataFrame"] svg text {
+    stroke: none !important;
+}
+[data-testid="stVegaLiteChart"] svg rect:not(.mark-rect) {
+    stroke: none !important;
+}
+img[src^="data:image/svg+xml"] { filter: var(--pafcci-img-filter); }
+button[kind="primary"] img[src^="data:image/svg+xml"], [data-testid="baseButton-primary"] img[src^="data:image/svg+xml"] {
+    filter: brightness(0) invert(1) !important;
+}
+
+/* ── Audio iframe concealment ──────────────────────────────────────────────── */
+iframe[title*="components"] {
+    display: none !important;
+    height: 0px !important;
+    width: 0px !important;
+    position: absolute !important;
+    border: none !important;
+}
+
+/* ── App-Tab Switcher (Analyser / Cyber Portal) in Sidebar ──────────────── */
+.pafcci-app-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--pafcci-border);
+    background: var(--pafcci-bg-elevated);
+    color: var(--pafcci-text-secondary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 6px;
+    transition: all 0.18s ease;
+    letter-spacing: 0.02em;
+}
+.pafcci-app-tab-btn:hover {
+    border-color: var(--pafcci-primary);
+    color: var(--pafcci-primary);
+    background: var(--pafcci-primary-muted);
+}
+.pafcci-app-tab-btn.active {
+    background: var(--pafcci-primary);
+    border-color: var(--pafcci-primary-dark);
+    color: #fff;
+}
+.pafcci-section-divider {
+    height: 1px;
+    background: var(--pafcci-border);
+    margin: 10px 0 12px 0;
+}
+.pafcci-section-label {
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    color: var(--pafcci-text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding-left: 2px;
+}
+
+/* ── Portal-specific cards ──────────────────────────────────────────────── */
+.pafcci-dir-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--pafcci-bg-elevated);
+    border: 1px solid var(--pafcci-border);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    margin-bottom: 14px;
+}
+.pafcci-status-card-online {
+    background: var(--pafcci-online-bg);
+    border: 1px solid var(--pafcci-online-border);
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: var(--pafcci-card-shadow);
+}
+.pafcci-status-card-offline {
+    background: var(--pafcci-offline-bg);
+    border: 1px solid var(--pafcci-offline-border);
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: var(--pafcci-card-shadow);
+}
+.pafcci-otp-card {
+    background: var(--pafcci-online-bg);
+    border: 2px solid var(--pafcci-online-border);
+    padding: 18px;
+    border-radius: 8px;
+    margin: 15px 0;
+    box-shadow: var(--pafcci-card-shadow);
+}
+.pafcci-badge-lock {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--pafcci-badge-bg);
+    border: 1px solid var(--pafcci-badge-border);
+    color: var(--pafcci-badge-text);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
 </style>
 """, unsafe_allow_html=True)
+
+
+
+# ── Loading Screen ────────────────────────────────────────────────────────────
+def _show_loading_screen():
+    """Full-screen cyber splash shown once on first load (adapts to Dark or Light theme)."""
+    components.html("""
+    <script>
+    (function() {
+        var pDoc = (window.parent && window.parent.document) ? window.parent.document : document;
+        var pWin = window.parent || window;
+        if (pDoc.getElementById('pafcci-loading-screen')) return;
+
+        var isDark = true;
+        try {
+            var pathKey = 'stActiveTheme-' + (pWin.location.pathname || '/');
+            var v2Key = pathKey + '-v2';
+            var raw = pWin.localStorage.getItem(v2Key) || pWin.localStorage.getItem(pathKey);
+            if (raw) {
+                var parsed = JSON.parse(raw);
+                if (parsed && parsed.name === 'Light') isDark = false;
+            } else if (pWin.matchMedia && pWin.matchMedia('(prefers-color-scheme: light)').matches) {
+                isDark = false;
+            }
+        } catch(e) {}
+
+        var bgColor = isDark ? '#0B1120' : '#F7F9FC';
+        var logoColor = isDark ? '#86F0E2' : '#2563EB';
+        var logoShadow = isDark ? '0 0 24px rgba(134,240,226,0.35)' : '0 4px 16px rgba(37,99,235,0.2)';
+        var subColor = isDark ? '#94A3B8' : '#5B6B82';
+        var barTrack = isDark ? '#1A2333' : '#DDE3EC';
+        var barFill = isDark ? 'linear-gradient(90deg, #3B82F6, #86F0E2)' : 'linear-gradient(90deg, #2563EB, #60A5FA)';
+        var barShadow = isDark ? '0 0 10px #86F0E2' : '0 0 10px rgba(37,99,235,0.35)';
+
+        var style = pDoc.createElement('style');
+        style.id = 'pafcci-loading-style';
+        style.textContent = `
+            #pafcci-loading-screen {
+                position: fixed !important;
+                top: 0 !important; left: 0 !important;
+                width: 100vw !important; height: 100vh !important;
+                background: ${bgColor} !important;
+                z-index: 9999999 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                transition: opacity 0.5s ease !important;
+                font-family: 'Inter', sans-serif !important;
+            }
+            .pafcci-load-logo {
+                font-size: 2.8rem;
+                font-weight: 800;
+                letter-spacing: 0.14em;
+                color: ${logoColor};
+                text-shadow: ${logoShadow};
+                animation: pafcci-pulse 1.4s ease-in-out infinite alternate;
+            }
+            .pafcci-load-tag {
+                font-size: 0.72rem;
+                color: ${subColor};
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                margin-top: 6px;
+                font-weight: 600;
+            }
+            .pafcci-load-sub {
+                color: ${subColor};
+                font-size: 0.85rem;
+                margin-top: 22px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+            .pafcci-load-bar-wrap {
+                width: 260px;
+                height: 4px;
+                background: ${barTrack};
+                border-radius: 4px;
+                margin-top: 16px;
+                overflow: hidden;
+                position: relative;
+            }
+            .pafcci-load-bar-inner {
+                position: absolute;
+                top: 0; left: 0; height: 100%; width: 0%;
+                background: ${barFill};
+                box-shadow: ${barShadow};
+                animation: pafcci-bar-fill 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            }
+            @keyframes pafcci-pulse {
+                from { transform: scale(0.98); opacity: 0.8; }
+                to { transform: scale(1.02); opacity: 1; text-shadow: ${logoShadow}; }
+            }
+            @keyframes pafcci-bar-fill {
+                0% { width: 0%; }
+                60% { width: 75%; }
+                100% { width: 100%; }
+            }
+        `;
+        pDoc.head.appendChild(style);
+
+        var overlay = pDoc.createElement('div');
+        overlay.id = 'pafcci-loading-screen';
+        overlay.innerHTML = `
+            <div class="pafcci-load-logo">PAFCCI</div>
+            <div class="pafcci-load-tag">I4C &middot; MHA &middot; Cybercrime Intelligence</div>
+            <div class="pafcci-load-sub">INITIALIZING INTELLIGENCE PLATFORM...</div>
+            <div class="pafcci-load-bar-wrap"><div class="pafcci-load-bar-inner"></div></div>
+        `;
+        pDoc.body.appendChild(overlay);
+
+        setTimeout(function() {
+            overlay.style.opacity = '0';
+            setTimeout(function() {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                if (style.parentNode) style.parentNode.removeChild(style);
+            }, 550);
+        }, 1300);
+    })();
+    </script>
+    """, height=0, width=0)
+
+# ── Instant Audio Listener Setup ──────────────────────────────────────────────
+_setup_audio_listeners()
+
 
 # ── Session State Init ────────────────────────────────────────────────────────
 if "running"           not in st.session_state: st.session_state.running           = False
@@ -91,82 +661,403 @@ if "cached_deliv_res"  not in st.session_state: st.session_state.cached_deliv_re
 if "dm_auth_officer"   not in st.session_state: st.session_state.dm_auth_officer   = None
 if "dm_staged_actions" not in st.session_state: st.session_state.dm_staged_actions = []
 if "dm_show_signout_confirm" not in st.session_state: st.session_state.dm_show_signout_confirm = False
+if "active_tab"    not in st.session_state: st.session_state.active_tab    = 0
+if "_app_loaded"   not in st.session_state: st.session_state._app_loaded   = False
+# ── Portal session state ───────────────────────────────────────────────────────
+if "app_section"              not in st.session_state: st.session_state.app_section              = "analyser"
+if "selected_officer_key"     not in st.session_state: st.session_state.selected_officer_key     = list(AUTHORITY_USERS.keys())[0]
+if "last_generated_otp"       not in st.session_state: st.session_state.last_generated_otp       = None
+if "last_otp_user"            not in st.session_state: st.session_state.last_otp_user            = None
+
+# ── Initial Loading Splash ───────────────────────────────────────────────────
+if not st.session_state._app_loaded:
+    _show_loading_screen()
+    st.session_state._app_loaded = True
 
 store = get_store()
 
-# ── Sidebar Controls ─────────────────────────────────────────────────────────
+# ── Sidebar: PAFCCI Logo + App-Level Navigation ──────────────────────────────
 with st.sidebar:
-    st.title("⚙️ Generator & Engine Controls")
-    st.caption("All data is SYNTHETIC — not real.")
-    st.divider()
-
-    st.subheader("⚡ Execution Mode")
-    exec_mode = st.radio(
-        "Platform Mode",
-        ["Fast Direct Mode (~1s, Offline)", "CrewAI Agent Mode (Gemini LLM)"],
-        index=0,
-        help="Fast Direct mode runs deterministic pipeline locally without API keys.",
+    # ── Logo ──────────────────────────────────────────────────────────────────
+    st.markdown(
+        f"""
+        <div style="display:flex;align-items:center;gap:10px;padding:4px 0 14px 0;border-bottom:1px solid var(--pafcci-border);margin-bottom:14px;">
+            {get_svg_icon("shield", 30)}
+            <div>
+                <div style="color:var(--pafcci-primary);font-size:1.15rem;font-weight:800;letter-spacing:0.08em;line-height:1.2;">PAFCCI</div>
+                <div style="color:var(--pafcci-text-secondary);font-size:0.68rem;letter-spacing:0.04em;">CYBERCRIME INTELLIGENCE</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
     use_llm = "Gemini LLM" in exec_mode
 
-    st.subheader("👤 Attacker Settings")
-    num_attackers   = st.slider("Active Attackers",         1, 20,  3)
-    phone_churn     = st.slider("Phone Churn Rate",        0.0, 1.0, 0.20, 0.05)
-    ip_churn        = st.slider("IP/VPN Churn Rate",       0.0, 1.0, 0.20, 0.05)
+    # ── App-Level Tab Switcher ─────────────────────────────────────────────────
+    st.markdown(
+        '<div class="pafcci-section-label">Platform</div>',
+        unsafe_allow_html=True,
+    )
 
-    st.subheader("💸 Transaction Settings")
-    amount_mean     = st.number_input("Mean Fraud Amount (INR)", 1000, 500000, 70000, 1000)
-    amount_var      = st.slider("Amount Variance",           0.05, 1.0, 0.30, 0.05)
-    freq_before_atm = st.slider("Transactions before ATM",    1, 20,   3)
+    _in_analyser = (st.session_state.app_section == "analyser")
+    _in_portal   = (st.session_state.app_section == "portal")
 
-    st.subheader("🔗 Mule Chain Settings")
-    mule_depth      = st.slider("Max Mule Chain Depth (hops)",   2,  7,   3)
+    _analyser_icon_uri = get_svg_data_uri("shield", 16, "#FFFFFF" if _in_analyser else "#2563EB")
+    _portal_icon_uri   = get_svg_data_uri("lock",   16, "#FFFFFF" if _in_portal   else "#2563EB")
 
-    st.subheader("🏧 ATM / Withdrawal Settings")
-    atm_bias        = st.selectbox("ATM Location Bias", ["Urban", "Semi-Urban", "Rural", "Random"])
-    report_to_w_min = st.slider("Report→Withdrawal Min (min)",  1, 60,  10)
-    report_to_w_max = st.slider("Report→Withdrawal Max (min)", 10, 240, 30)
+    if st.button(
+        f"![icon]({_analyser_icon_uri})  Analyser",
+        key="nav_app_analyser",
+        type="primary" if _in_analyser else "secondary",
+        use_container_width=True,
+    ):
+        if not _in_analyser:
+            st.session_state.app_section = "analyser"
+            st.rerun()
 
-    st.subheader("⏱️ Timing Settings")
-    tick_interval   = st.slider("Interval Between Cycles (sec)", 10, 300, 20, 10)
+    if st.button(
+        f"![icon]({_portal_icon_uri})  Cyber Portal",
+        key="nav_app_portal",
+        type="primary" if _in_portal else "secondary",
+        use_container_width=True,
+    ):
+        if not _in_portal:
+            st.session_state.app_section = "portal"
+            st.rerun()
+
+    st.markdown('<div class="pafcci-section-divider"></div>', unsafe_allow_html=True)
+
+    # ── Conditional lower sidebar ──────────────────────────────────────────────
+    if _in_analyser:
+        # Component selection buttons
+        st.markdown(
+            f"""
+            <div style="font-size:0.70rem;font-weight:700;letter-spacing:0.08em;color:var(--pafcci-primary);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                {get_svg_icon("crosshair", 14)} COMPONENT SELECTION
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        _components = [
+            (0, "Victim Report Generator", "report"),
+            (1, "Variance Anomaly Model",  "variance"),
+            (2, "ATM Risk Heatmap",        "heatmap"),
+            (3, "Delivery & Action Routing", "delivery"),
+        ]
+
+        for _idx, _title, _icon_name in _components:
+            _is_cur = (st.session_state.active_tab == _idx)
+            _icon_uri = get_svg_data_uri(_icon_name, 20, "#FFFFFF" if _is_cur else "#2563EB")
+            _btn_label = f"![icon]({_icon_uri})  {_title}"
+
+            if st.button(
+                _btn_label,
+                key=f"nav_comp_btn_{_idx}",
+                type="primary" if _is_cur else "secondary",
+                use_container_width=True,
+            ):
+                if st.session_state.active_tab != _idx:
+                    st.session_state.active_tab = _idx
+                    st.rerun()
+
+        st.markdown("---")
+
+        # Platform Telemetry Pill
+        _eng_st = '<span style="color:var(--pafcci-risk-low);font-weight:700;">● RUNNING</span>' if st.session_state.running else '<span style="color:var(--pafcci-risk-high);font-weight:700;">○ STOPPED</span>'
+        st.markdown(
+            f"""
+            <div style="background:var(--pafcci-bg-elevated);border:1px solid var(--pafcci-border);border-radius:8px;padding:10px 12px;font-size:0.75rem;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span style="color:var(--pafcci-text-secondary);">Engine Status:</span>
+                    {_eng_st}
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                    <span style="color:var(--pafcci-text-secondary);">Cycles Run:</span>
+                    <span style="color:var(--pafcci-primary);font-weight:700;">{st.session_state.cycle_count}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:var(--pafcci-text-secondary);">Events in Store:</span>
+                    <span style="color:var(--pafcci-primary);font-weight:700;">{store.count()}</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
+        if st.button("Reset Store & Engines", type="secondary", use_container_width=True, key="sidebar_reset_btn"):
+            from generator.tools.attacker_tools import _initialise_pool
+            store.clear()
+            _initialise_pool(0)
+            reset_model()
+            reset_engines()
+            reset_drift_detector()
+            reset_appeals_manager()
+            reset_delivery_audit_log()
+            st.session_state.cycle_count       = 0
+            st.session_state.last_events       = []
+            st.session_state.selected_atm      = None
+            st.session_state.cache_cycle_count   = -1
+            st.session_state.cached_pred_cycle   = -1
+            st.session_state.cached_event_count  = -1
+            st.session_state.cached_var_res      = None
+            st.session_state.cached_pred_res     = None
+            st.session_state.cached_deliv_res    = None
+            st.session_state.cached_deliv_params = None
+            st.rerun()
+
+    else:
+        # ── Portal sidebar: Officer Directory ──────────────────────────────────
+        st.markdown(
+            f"""
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                {get_svg_icon("users", 20)}
+                <h3 style="margin:0;font-size:1.05rem;">Authoritative Directory</h3>
+            </div>
+            <div style="font-size:0.75rem;color:var(--pafcci-text-secondary);margin-bottom:12px;">Select an officer to inspect live actions or issue an access OTP.</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        _portal_user_statuses = get_all_user_statuses()
+        _online_count = sum(1 for u in _portal_user_statuses.values() if u["status"] == "ONLINE")
+        _total_count  = len(_portal_user_statuses)
+        st.markdown(
+            f"""
+            <div class="pafcci-dir-status">
+                <span style="color:var(--pafcci-text-secondary);">Directory Status</span>
+                <span style="color:var(--pafcci-risk-low);font-weight:700;">🟢 {_online_count} Online &nbsp;•&nbsp; <span style="color:var(--pafcci-text-secondary);font-weight:400;">{_total_count - _online_count} Offline</span></span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        for _k, _u in AUTHORITY_USERS.items():
+            _live   = _portal_user_statuses[_k]
+            _is_sel = (st.session_state.selected_officer_key == _k)
+            _is_on  = (_live["status"] == "ONLINE")
+            _status_str = "🟢 ONLINE" if _is_on else "🔴 OFFLINE"
+            _btn_label  = f"`{_status_str}`\n**{_u['name']}**\n*{_u['role']}*"
+            if st.button(
+                _btn_label,
+                key=f"officer_tab_{_k}",
+                type="primary" if _is_sel else "secondary",
+                use_container_width=True,
+            ):
+                if st.session_state.selected_officer_key != _k:
+                    st.session_state.selected_officer_key = _k
+                    st.rerun()
+
+        st.markdown("---")
+
+        @st.dialog("Are you sure?")
+        def confirm_clear_dialog():
+            st.warning("This will purge all session logs (TXT), authority actions (CSV), and reset all active OTP locks.")
+            st.write("Do you want to proceed?")
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button("Yes, Clear Data", type="primary", use_container_width=True, key="confirm_clear_yes_btn"):
+                    _res = clear_all_data()
+                    st.session_state.last_generated_otp = None
+                    st.success("All data cleared.")
+                    st.rerun()
+            with c2:
+                if st.button("Cancel", type="secondary", use_container_width=True, key="confirm_clear_cancel_btn"):
+                    st.rerun()
+
+        if st.button("🗑️ Clear All Portal Data", type="secondary", use_container_width=True, key="clear_data_btn"):
+            confirm_clear_dialog()
+
+
+
+# ── App-Level Section Router ──────────────────────────────────────────────────
+if st.session_state.app_section == "portal":
+    # ════════════════════════════════════════════════════════════════════════════
+    # CYBER PORTAL — Authority Identity & OTP Dispatcher
+    # ════════════════════════════════════════════════════════════════════════════
+    _portal_user_statuses = get_all_user_statuses()
+    _cur_portal_user = _portal_user_statuses[st.session_state.selected_officer_key]
+    _is_online = (_cur_portal_user["status"] == "ONLINE")
+    _portal_officer_data = AUTHORITY_USERS[st.session_state.selected_officer_key]
+
+    # ── Portal Banner ─────────────────────────────────────────────────────────
+    st.markdown(
+        f"""
+        <div class="pafcci-banner">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:14px;">
+                    {get_svg_icon("shield", 34)}
+                    <div>
+                        <h2 style="margin:0;font-size:1.45rem;display:flex;align-items:center;gap:10px;">
+                            CYBER PORTAL &nbsp;<span class="pafcci-badge-pill">AUTHORITY OTP DISPATCHER</span>
+                        </h2>
+                        <p style="margin:4px 0 0 0;font-size:0.88rem;">
+                            <strong>Secure one-time credentials</strong> for Action Routing &amp; Delivery Audit in the Analyser.
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <span class="pafcci-badge-lock">
+                        {get_svg_icon("lock", 14)} SINGLE SESSION LOCK
+                    </span>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ── Officer Profile Header ────────────────────────────────────────────────
+    _top_col1, _top_col2 = st.columns([2.5, 1.5])
+    with _top_col1:
+        st.markdown(
+            f"""
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                {get_svg_icon("user", 24)}
+                <h3 style="margin:0;font-size:1.25rem;">Officer Profile: {_portal_officer_data['name']}</h3>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"**Role:** `{_portal_officer_data['role']}` &nbsp;|&nbsp; "
+            f"**Badge ID:** `{_portal_officer_data['badge_id']}` &nbsp;|&nbsp; "
+            f"**Department:** *{_portal_officer_data['department']}*"
+        )
+    with _top_col2:
+        if _is_online:
+            st.markdown(
+                """
+                <div class="pafcci-status-card-online">
+                    <span style="color:var(--pafcci-risk-low);font-weight:bold;font-size:1.1rem;">🟢 ONLINE</span>
+                    <div style="font-size:0.8rem;color:var(--pafcci-text-secondary);margin-top:4px;">Active in Delivery Model</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                """
+                <div class="pafcci-status-card-offline">
+                    <span style="color:var(--pafcci-text-secondary);font-weight:bold;font-size:1.1rem;">🔴 OFFLINE</span>
+                    <div style="font-size:0.8rem;color:var(--pafcci-text-disabled);margin-top:4px;">No Active Session</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     st.divider()
 
-    # Start / Stop
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("▶ START", use_container_width=True,
-                     disabled=st.session_state.running,
-                     type="primary"):
-            st.session_state.running = True
-            st.session_state.error_msg = ""
-            st.rerun()
-    with col2:
-        if st.button("⏹ STOP", use_container_width=True,
-                     disabled=not st.session_state.running):
-            st.session_state.running = False
-            st.rerun()
+    # ── Officer Sub-Tabs ──────────────────────────────────────────────────────
+    _ptab_otp, _ptab_actions, _ptab_logs = st.tabs([
+        "🔑 OTP Dispatch & Access",
+        f"📋 Committed Actions ({_portal_officer_data['name']})",
+        "📟 Session Logs",
+    ])
 
-    if st.button("🗑 Clear Store", use_container_width=True):
-        from generator.tools.attacker_tools import _initialise_pool
-        store.clear()
-        _initialise_pool(0)           # wipe the persistent attacker pool
-        reset_model()                 # wipe Markov prediction model
-        reset_engines()               # wipe recalibration engine + audit log
-        reset_drift_detector()        # wipe drift detection windows
-        reset_appeals_manager()       # wipe appeals state machine
-        reset_delivery_audit_log()    # wipe delivery audit log
-        st.session_state.cycle_count       = 0
-        st.session_state.last_events       = []
-        st.session_state.selected_atm      = None
-        st.session_state.cache_cycle_count   = -1
-        st.session_state.cached_pred_cycle   = -1
-        st.session_state.cached_event_count  = -1
-        st.session_state.cached_var_res      = None
-        st.session_state.cached_pred_res     = None
-        st.session_state.cached_deliv_res    = None
-        st.session_state.cached_deliv_params = None
-        st.rerun()
+    with _ptab_otp:
+        st.markdown(
+            f"""
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                {get_svg_icon("key", 20)}
+                <h4 style="margin:0;font-size:1.05rem;">Generate Action Routing Access OTP</h4>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "Generate a one-time 6-digit OTP for this authority user to unlock Action Routing "
+            "decision panels and Delivery Audit in the Analyser → Delivery & Action Routing tab."
+        )
+        if _is_online:
+            _active_sess = _cur_portal_user.get("active_session", {})
+            st.success(
+                f"**{_portal_officer_data['name']}** currently holds an **ACTIVE SESSION**.\n\n"
+                f"- **Active OTP:** `{_active_sess.get('otp', '******')}`\n"
+                f"- **Login Time:** `{_active_sess.get('login_time', 'N/A')}`\n\n"
+                "This user can already unlock Action Routing using this OTP."
+            )
+            st.info("Single-User Rule Enforced: Only one active session per officer at a time.")
+            if st.button("Force Sign Out Active Session", key=f"force_logout_{_portal_officer_data['username']}"):
+                sign_out_user(_portal_officer_data["username"], commit_staged=False)
+                st.warning(f"Session terminated for {_portal_officer_data['name']}.")
+                st.rerun()
+        else:
+            st.markdown(
+                f"Click below to generate a fresh 6-digit access code for **{_portal_officer_data['name']}**. "
+                "Once generated, status transitions to `ONLINE`."
+            )
+            if (
+                st.session_state.last_generated_otp
+                and st.session_state.last_otp_user == _portal_officer_data["username"]
+            ):
+                st.markdown(
+                    f"""
+                    <div class="pafcci-otp-card">
+                        <div style="color:var(--pafcci-text-secondary);font-size:0.95rem;">One-Time Password Generated for <b>{_portal_officer_data['name']}</b>:</div>
+                        <div style="color:var(--pafcci-risk-low);font-family:monospace;font-size:2.2rem;font-weight:bold;letter-spacing:6px;margin:10px 0;">
+                            {st.session_state.last_generated_otp}
+                        </div>
+                        <div style="color:var(--pafcci-text-secondary);font-size:0.85rem;">
+                            Copy this OTP and paste it into <b>Analyser → Delivery &amp; Action Routing</b> to unlock enforcement actions.
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                if st.button("Return to Login Screen", key="return_login_btn", type="primary"):
+                    st.session_state.last_generated_otp = None
+                    st.session_state.last_otp_user = None
+                    st.rerun()
+            else:
+                if st.button(f"Generate OTP for {_portal_officer_data['name']}", type="primary", key=f"gen_otp_{_portal_officer_data['username']}"):
+                    try:
+                        _otp_code, _sess_data = generate_otp_for_user(_portal_officer_data["username"])
+                        st.session_state.last_generated_otp = _otp_code
+                        st.session_state.last_otp_user = _portal_officer_data["username"]
+                        st.success(f"OTP generated for {_portal_officer_data['name']}!")
+                        st.rerun()
+                    except Exception as _exc:
+                        st.error(f"OTP Generation Error: {_exc}")
+
+    with _ptab_actions:
+        st.markdown(
+            f"""
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                {get_svg_icon("report", 20)}
+                <h4 style="margin:0;font-size:1.05rem;">Actions Committed by {_portal_officer_data['name']}</h4>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.caption("Enforcement actions made via Delivery & Action Routing by this officer.")
+        _user_actions = get_authority_actions(authority_name=_portal_officer_data["name"])
+        if not _user_actions:
+            st.info(f"No actions committed yet by {_portal_officer_data['name']}.")
+        else:
+            _df_act = pd.DataFrame(_user_actions)
+            st.markdown(f"**Total Actions Logged:** `{len(_df_act)}`")
+            st.dataframe(_df_act, use_container_width=True)
+
+    with _ptab_logs:
+        st.markdown(
+            f"""
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                {get_svg_icon("terminal", 20)}
+                <h4 style="margin:0;font-size:1.05rem;">Sign-In &amp; Sign-Out Ledger</h4>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.caption("Records every authentication and session termination event.")
+        _logs = get_recent_session_logs(max_lines=60)
+        if not _logs:
+            st.info("No session log events recorded yet.")
+        else:
+            st.text_area("Live Log Output", value="\n".join(_logs), height=350, disabled=True)
+
+    st.stop()   # Portal rendered — stop here; Analyser body below won't execute
 
     if st.button("▶ Run One Cycle Now", use_container_width=True):
         st.session_state.running = False
@@ -901,86 +1792,8 @@ with tab_delivery:
                         except Exception as exc:
                             st.error(f"Authentication Failed: {exc}")
 
-                st.caption("💡 Don't have an active OTP? Switch to the **🛡️ Cyber Portal** page in the left sidebar to generate your one-time code.")
-        else:
-            # Active authenticated session bar
-            st.markdown(
-                f"""
-                <div style='background:#064e3b;border:1px solid #00cc88;border-left:5px solid #00cc88;padding:12px 18px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;'>
-                    <div>
-                        <span style='color:#00ffaa;font-weight:bold;font-size:1.05rem;'>🟢 {_cur_officer['name']}</span>
-                        <span style='color:#cbd5e1;font-size:0.88rem;margin-left:8px;'>({_cur_officer['role']} · {_cur_officer['badge_id']})</span>
-                    </div>
-                    <div>
-                        <span style='background:#0f2b1d;color:#a7f3d0;padding:4px 10px;border-radius:6px;font-size:0.85rem;border:1px solid #00cc88;'>
-                            Uncommitted Actions: <b>{len(st.session_state.dm_staged_actions)}</b>
-                        </span>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                st.caption("💡 Don't have an active OTP? Switch to the **🛡️ Cyber Portal** tab in the left sidebar to generate your one-time code.")
 
-            # Controls: Commit & Sign Out
-            scol_a, scol_b, scol_c = st.columns([2, 1, 1])
-            with scol_a:
-                if len(st.session_state.dm_staged_actions) > 0:
-                    st.caption(f"⚠️ You have {len(st.session_state.dm_staged_actions)} staged action(s). Commit to record to local CSV.")
-                else:
-                    st.caption("Ready. Executed actions will stage here before committing.")
-            with scol_b:
-                if st.button("💾 Commit Changes", type="primary", use_container_width=True, key="dm_commit_btn"):
-                    if len(st.session_state.dm_staged_actions) == 0:
-                        st.info("No uncommitted actions to commit.")
-                    else:
-                        cnt = commit_authority_actions(_cur_officer["name"], st.session_state.dm_staged_actions)
-                        st.session_state.dm_staged_actions = []
-                        st.success(f"Successfully committed {cnt} action(s) to cyber_portal_authority_actions.csv!")
-                        st.rerun()
-            with scol_c:
-                if st.button("🚪 Sign Out", type="secondary", use_container_width=True, key="dm_signout_init_btn"):
-                    if len(st.session_state.dm_staged_actions) > 0:
-                        st.session_state.dm_show_signout_confirm = True
-                        st.rerun()
-                    else:
-                        sign_out_user(_cur_officer["username"], commit_staged=False)
-                        st.session_state.dm_auth_officer = None
-                        st.session_state.dm_staged_actions = []
-                        st.session_state.dm_show_signout_confirm = False
-                        st.info("Session ended and OTP invalidated.")
-                        st.rerun()
-
-            # Confirmation Dialog if signing out with uncommitted changes
-            if st.session_state.dm_show_signout_confirm:
-                st.warning(
-                    f"⚠️ **Do you want to commit changes?**\n\n"
-                    f"You have **{len(st.session_state.dm_staged_actions)}** uncommitted action(s) in this session. "
-                    "Signing out without committing will discard these staged decisions."
-                )
-                cf_col1, cf_col2 = st.columns(2)
-                with cf_col1:
-                    if st.button("Yes", type="primary", use_container_width=True, key="confirm_signout_yes"):
-                        sign_out_user(
-                            _cur_officer["username"],
-                            commit_staged=True,
-                            staged_actions=st.session_state.dm_staged_actions,
-                        )
-                        st.session_state.dm_auth_officer = None
-                        st.session_state.dm_staged_actions = []
-                        st.session_state.dm_show_signout_confirm = False
-                        st.success("Changes committed to CSV and session closed.")
-                        st.rerun()
-                with cf_col2:
-                    if st.button("No", type="secondary", use_container_width=True, key="confirm_signout_no"):
-                        sign_out_user(
-                            _cur_officer["username"],
-                            commit_staged=False,
-                        )
-                        st.session_state.dm_auth_officer = None
-                        st.session_state.dm_staged_actions = []
-                        st.session_state.dm_show_signout_confirm = False
-                        st.info("Changes discarded and session closed.")
-                        st.rerun()
 
         # ── Delivery Sub-tabs ──────────────────────────────────────────────────
         dtab_civ, dtab_auth, dtab_bank, dtab_appeal = st.tabs([

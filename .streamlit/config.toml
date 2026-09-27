@@ -19,3 +19,6 @@ gatherUsageStats    = false
 
 [runner]
 fastReruns          = true
+
+[client]
+showSidebarNavigation = false

@@ -15,7 +15,7 @@ pydantic>=2.7.0
 # Geospatial & Visualisation
 pydeck>=0.8.0
 
-# Streamlit UI
+# Streamlit UI (free on Streamlit Community Cloud)
 streamlit>=1.39.0
 streamlit-autorefresh>=1.0.1
 

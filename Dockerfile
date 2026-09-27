@@ -1,30 +1,62 @@
-# Multi-platform Python base image (works on Mac Apple Silicon M1/M2/M3 and Windows/Intel)
+# ============================================================
+# PAFCCI - CyberAnalyser
+# Dockerfile — multi-service Streamlit container
+#
+#   app.py        → port 8501  (main dashboard)
+#   portal_app.py → port 8502  (authority portal)
+#
+# Build:
+#   docker build -t cyberanalyser .
+#
+# Run (both apps):
+#   docker run -p 8501:8501 -p 8502:8502 --env-file .env cyberanalyser
+# ============================================================
+
+# ---------- base image ----------
 FROM python:3.11-slim
 
-# Prevent Python from writing .pyc files and buffer outputs
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Metadata
+LABEL maintainer="MineSafe Stimulation"
+LABEL description="PAFCCI CyberAnalyser — Synthetic Cybercrime Intelligence Platform"
+LABEL version="1.0"
 
-WORKDIR /app
+# ---------- environment ----------
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install essential system build dependencies
+# ---------- system dependencies ----------
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
+        build-essential \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+# ---------- working directory ----------
+WORKDIR /app
 
-# Copy application source code
+# ---------- install Python dependencies first (layer cache) ----------
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+    && pip install -r requirements.txt
+
+# ---------- copy project files ----------
 COPY . .
 
-# Expose both service ports:
-# 8501: Analyst & Intelligence Map
-# 8502: Privileged Cyber Portal & OTP Dispatcher
+# ---------- expose Streamlit ports ----------
 EXPOSE 8501 8502
 
-# Default command (overridden by docker-compose)
-CMD ["streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+# ---------- startup script ----------
+# Launches both Streamlit apps; portal_app runs in the background.
+CMD ["sh", "-c", "\
+    streamlit run portal_app.py \
+        --server.port 8502 \
+        --server.address 0.0.0.0 \
+        --server.headless true \
+        --browser.gatherUsageStats false & \
+    streamlit run app.py \
+        --server.port 8501 \
+        --server.address 0.0.0.0 \
+        --server.headless true \
+        --browser.gatherUsageStats false \
+"]

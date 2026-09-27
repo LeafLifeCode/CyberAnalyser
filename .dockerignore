@@ -1,27 +1,36 @@
-# Python virtual environments (Host architecture binaries must NOT be copied into container)
-.venv/
-venv/
-ENV/
-
-# Python cache & compiled files
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
+*.pyo
+*.pyd
+.Python
 
-# Git repository metadata
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment secrets — NEVER bake into image
+.env
+
+# Logs & audit files (large, runtime-generated)
+audit_log.jsonl
+delivery_audit_log.jsonl
+cyber_portal_audit_ledger.jsonl
+cyber_portal_session_log.txt
+cyber_portal_authority_actions.csv
+portal_sessions.json
+
+# Git
 .git/
 .gitignore
-.gitattributes
 
-# IDE & Editor Settings
+# IDE / OS
 .vscode/
 .idea/
+*.DS_Store
+Thumbs.db
 
-# Windows launcher scripts
-*.bat
-*.ps1
-
-# Temporary pip caches
-D:\pip-tmp
-D:\pip-cache
+# Docker
+Dockerfile
+.dockerignore

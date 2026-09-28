@@ -550,31 +550,100 @@ button:disabled {
     border-color: var(--pafcci-border) !important;
 }
 
-/* ── Metrics & KPI cards ───────────────────────────────────────────────────── */
-[data-testid="metric-container"] {
-    background-color: var(--pafcci-bg-surface);
-    border: 1px solid var(--pafcci-border);
-    border-radius: 8px;
-    padding: 12px 16px;
-    box-shadow: var(--pafcci-card-shadow);
-    transition: border-color 0.2s;
+/* ── Metrics & KPI Cards (Guaranteed Visible in Both Themes) ────────────────── */
+[data-testid="stMetric"], [data-testid="metric-container"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    border: 1px solid var(--pafcci-border) !important;
+    border-radius: 8px !important;
+    padding: 12px 16px !important;
+    box-shadow: var(--pafcci-card-shadow) !important;
+    transition: border-color 0.2s !important;
 }
-[data-testid="metric-container"]:hover {
-    border-color: var(--pafcci-primary);
+[data-testid="stMetric"]:hover, [data-testid="metric-container"]:hover {
+    border-color: var(--pafcci-primary) !important;
 }
-[data-testid="metric-container"] label {
+[data-testid="stMetricLabel"], [data-testid="stMetricLabel"] *, [data-testid="metric-container"] label {
     color: var(--pafcci-text-secondary) !important;
-    font-size: 0.75rem !important;
+    font-size: 0.80rem !important;
+    font-weight: 600 !important;
 }
-[data-testid="metric-container"] [data-testid="stMetricValue"] {
+[data-testid="stMetricValue"], [data-testid="stMetricValue"] *, [data-testid="metric-container"] [data-testid="stMetricValue"] {
     color: var(--pafcci-text-primary) !important;
-    font-weight: 700 !important;
+    font-size: 1.65rem !important;
+    font-weight: 800 !important;
+}
+
+/* ── Widget Labels & Form Typography ───────────────────────────────────────── */
+[data-testid="stWidgetLabel"], [data-testid="stWidgetLabel"] *,
+label, label p, label span {
+    color: var(--pafcci-text-primary) !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+}
+
+/* ── Inputs / Selectboxes / Dropdowns ──────────────────────────────────────── */
+[data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea,
+[data-testid="stSelectbox"] select, div[data-baseweb="select"] > div {
+    background-color: var(--pafcci-input-bg) !important;
+    color: var(--pafcci-text-primary) !important;
+    border: 1px solid var(--pafcci-border) !important;
+    border-radius: 7px !important;
+}
+div[data-baseweb="select"] * {
+    color: var(--pafcci-text-primary) !important;
+}
+div[data-baseweb="select"] svg {
+    fill: var(--pafcci-text-secondary) !important;
+}
+div[data-baseweb="popover"], ul[role="listbox"], li[role="option"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    color: var(--pafcci-text-primary) !important;
+    border-color: var(--pafcci-border) !important;
+}
+li[role="option"]:hover, li[role="option"][aria-selected="true"] {
+    background-color: var(--pafcci-bg-elevated) !important;
+    color: var(--pafcci-primary) !important;
+}
+[data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus {
+    border-color: var(--pafcci-primary) !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* ── Expanders (Ensures Headers are Crisp and Visible) ─────────────────────── */
+[data-testid="stExpander"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    border: 1px solid var(--pafcci-border) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--pafcci-card-shadow) !important;
+    overflow: hidden !important;
+}
+[data-testid="stExpander"] summary {
+    background-color: var(--pafcci-bg-elevated) !important;
+    color: var(--pafcci-text-primary) !important;
+    border-bottom: 1px solid var(--pafcci-border) !important;
+    padding: 10px 14px !important;
+}
+[data-testid="stExpander"] summary:hover {
+    background-color: var(--pafcci-border-subtle) !important;
+}
+[data-testid="stExpander"] summary * {
+    color: var(--pafcci-text-primary) !important;
+    font-weight: 600 !important;
+}
+[data-testid="stExpander"] summary svg {
+    fill: var(--pafcci-text-primary) !important;
+}
+[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    background-color: var(--pafcci-bg-surface) !important;
+    color: var(--pafcci-text-primary) !important;
+    padding: 14px !important;
 }
 
 /* ── Dataframes / Tables ───────────────────────────────────────────────────── */
 [data-testid="stDataFrame"] {
     border: 1px solid var(--pafcci-border) !important;
-    border-radius: 6px;
+    border-radius: 6px !important;
+    background-color: var(--pafcci-bg-surface) !important;
 }
 .stDataFrame thead th {
     background-color: var(--pafcci-bg-elevated) !important;
@@ -588,21 +657,8 @@ button:disabled {
     background-color: var(--pafcci-table-hover-bg) !important;
 }
 .stDataFrame tbody td {
-    color: var(--pafcci-text-primary);
-    border-color: var(--pafcci-border);
-}
-
-/* ── Inputs / Selects ──────────────────────────────────────────────────────── */
-[data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea,
-[data-testid="stSelectbox"] select, div[data-baseweb="select"] > div {
-    background-color: var(--pafcci-input-bg) !important;
     color: var(--pafcci-text-primary) !important;
-    border: 1px solid var(--pafcci-border) !important;
-    border-radius: 7px !important;
-}
-[data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus {
-    border-color: var(--pafcci-primary) !important;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+    border-color: var(--pafcci-border) !important;
 }
 
 /* ── Sliders ───────────────────────────────────────────────────────────────── */
@@ -800,7 +856,7 @@ iframe[title*="components"] {
 
 # ── Loading Screen ────────────────────────────────────────────────────────────
 def _show_loading_screen():
-    """Full-screen cyber splash shown once on first load (adapts to Dark or Light theme)."""
+    """Full-screen cyber splash shown once on first load."""
     components.html("""
     <script>
     (function() {
@@ -809,18 +865,6 @@ def _show_loading_screen():
         if (pDoc.getElementById('pafcci-loading-screen')) return;
 
         var isDark = true;
-        try {
-            var pathKey = 'stActiveTheme-' + (pWin.location.pathname || '/');
-            var v2Key = pathKey + '-v2';
-            var raw = pWin.localStorage.getItem(v2Key) || pWin.localStorage.getItem(pathKey);
-            if (raw) {
-                var parsed = JSON.parse(raw);
-                if (parsed && parsed.name === 'Light') isDark = false;
-            } else if (pWin.matchMedia && pWin.matchMedia('(prefers-color-scheme: light)').matches) {
-                isDark = false;
-            }
-        } catch(e) {}
-
         var bgColor = isDark ? '#0B1120' : '#F7F9FC';
         var logoColor = isDark ? '#86F0E2' : '#2563EB';
         var logoShadow = isDark ? '0 0 24px rgba(134,240,226,0.35)' : '0 4px 16px rgba(37,99,235,0.2)';

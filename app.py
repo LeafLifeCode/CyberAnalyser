@@ -27,12 +27,12 @@ from ui_icons import get_svg_icon, get_svg_data_uri
 _APP_DIR = Path(__file__).resolve().parent
 
 def is_dark_theme() -> bool:
-    """Detect if Streamlit is currently running in dark mode."""
-    return st.session_state.get("theme_mode", "dark") == "dark"
+    """Theme is permanently locked to dark mode."""
+    return True
 
 
 def get_risk_cell_style(val: str) -> str:
-    """Return styling for dataframe risk level cells adapting cleanly to dark vs light mode."""
+    """Return styling for dataframe risk level cells (dark mode only)."""
     if is_dark_theme():
         return {
             "CRITICAL": "background-color: rgba(220, 38, 38, 0.28); color: #FCA5A5; font-weight: bold;",
@@ -47,11 +47,10 @@ def get_risk_cell_style(val: str) -> str:
         "LOW":      "background-color: #DCFCE7; color: #15803D; font-weight: bold;",
     }.get(val, "")
 
-def _setup_audio_listeners(theme_mode: str = "dark"):
-    """Inject instant client-side audio listener and dual-theme real-time synchronizer.
+def _setup_audio_listeners():
+    """Inject instant client-side audio listener and dark-theme synchronizer.
     Plays sound_save.mp3 on START and STOP.
     Plays sound_click.mp3 on any other button interaction.
-    Synchronizes [data-theme="dark"|"light"] across DOM elements based on Streamlit menu.
     """
     click_fp = _APP_DIR / "sound_click.mp3"
     save_fp = _APP_DIR / "sound_save.mp3"
@@ -71,9 +70,9 @@ def _setup_audio_listeners(theme_mode: str = "dark"):
             var targetDoc = (window.parent && window.parent.document) ? window.parent.document : document;
             var targetWin = window.parent || window;
 
-            // ── Real-Time Dual-Theme Synchronizer ─────────────────────────────
+            // ── Dark Theme Enforcer ───────────────────────────────────────────
             function detectTheme() {{
-                return "{theme_mode}";
+                return "dark";
             }}
 
             function syncTheme() {{
@@ -217,59 +216,8 @@ h1, h2, h3, h4, h5, h6, p, label, button, input, textarea, select,
     font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 
-/* ── Dual Theme Variables: Light Mode Palette ──────────────────────────────── */
-:root, [data-theme="light"] {
-    --pafcci-bg-base: #F7F9FC;
-    --pafcci-bg-surface: #FFFFFF;
-    --pafcci-bg-elevated: #F0F4FA;
-    --pafcci-border: #DDE3EC;
-    --pafcci-border-subtle: #EDF2F7;
-    --pafcci-primary: #2563EB;
-    --pafcci-primary-hover: #1D4ED8;
-    --pafcci-primary-dark: #1E40AF;
-    --pafcci-primary-muted: #DBEAFE;
-    --pafcci-text-primary: #111827;
-    --pafcci-text-secondary: #5B6B82;
-    --pafcci-text-disabled: #A3AEC2;
-    --pafcci-risk-high: #DC2626;
-    --pafcci-risk-medium: #D97706;
-    --pafcci-risk-low: #16A34A;
-    --pafcci-info: #0284C7;
-    --pafcci-icon-color: #2563EB;
-    --pafcci-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-    --pafcci-banner-bg: linear-gradient(90deg, #FFFFFF, #F0F4FA);
-    --pafcci-badge-bg: #DBEAFE;
-    --pafcci-badge-text: #2563EB;
-    --pafcci-badge-border: #93C5FD;
-    --pafcci-online-bg: #F0FDF4;
-    --pafcci-online-border: #16A34A;
-    --pafcci-online-text: #16A34A;
-    --pafcci-offline-bg: #F0F4FA;
-    --pafcci-offline-border: #DDE3EC;
-    --pafcci-offline-text: #5B6B82;
-    --pafcci-code-bg: #F0F4FA;
-    --pafcci-code-text: #2563EB;
-    --pafcci-code-border: #DDE3EC;
-    --pafcci-input-bg: #FFFFFF;
-    --pafcci-table-even-bg: #F7F9FC;
-    --pafcci-table-hover-bg: #DBEAFE;
-    --pafcci-alert-success-bg: #F0FDF4;
-    --pafcci-alert-error-bg: #FEF2F2;
-    --pafcci-alert-warn-bg: #FFFBEB;
-    --pafcci-alert-info-bg: #F0F9FF;
-    --pafcci-risk-critical-bg: #FEE2E2;
-    --pafcci-risk-critical-text: #DC2626;
-    --pafcci-risk-high-bg: #FFEDD5;
-    --pafcci-risk-high-text: #C2410C;
-    --pafcci-risk-medium-bg: #FEF3C7;
-    --pafcci-risk-medium-text: #B45309;
-    --pafcci-risk-low-bg: #DCFCE7;
-    --pafcci-risk-low-text: #15803D;
-    --pafcci-img-filter: brightness(0) saturate(100%) invert(31%) sepia(94%) saturate(2132%) hue-rotate(213deg) brightness(96%) contrast(96%);
-}
-
-/* ── Dual Theme Variables: Cyber Dark Mode Palette ─────────────────────────── */
-[data-theme="dark"] {
+/* ── Theme Variables: Cyber Dark Mode Palette (permanent) ──────────────────── */
+:root {
     --pafcci-bg-base: #0B1120;
     --pafcci-bg-surface: #111827;
     --pafcci-bg-elevated: #1A2333;
@@ -317,58 +265,6 @@ h1, h2, h3, h4, h5, h6, p, label, button, input, textarea, select,
     --pafcci-risk-low-bg: rgba(22, 163, 74, 0.28);
     --pafcci-risk-low-text: #86EFAC;
     --pafcci-img-filter: brightness(0) saturate(100%) invert(88%) sepia(21%) saturate(928%) hue-rotate(113deg) brightness(98%) contrast(93%);
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-        --pafcci-bg-base: #0B1120;
-        --pafcci-bg-surface: #111827;
-        --pafcci-bg-elevated: #1A2333;
-        --pafcci-border: #2A3548;
-        --pafcci-border-subtle: #1F293D;
-        --pafcci-primary: #3B82F6;
-        --pafcci-primary-hover: #60A5FA;
-        --pafcci-primary-dark: #1D4ED8;
-        --pafcci-primary-muted: rgba(59, 130, 246, 0.2);
-        --pafcci-text-primary: #F3F4F6;
-        --pafcci-text-secondary: #94A3B8;
-        --pafcci-text-disabled: #64748B;
-        --pafcci-risk-high: #EF4444;
-        --pafcci-risk-medium: #F59E0B;
-        --pafcci-risk-low: #10B981;
-        --pafcci-info: #38BDF8;
-        --pafcci-icon-color: #86F0E2;
-        --pafcci-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        --pafcci-banner-bg: linear-gradient(90deg, #111827, #1A2333);
-        --pafcci-badge-bg: rgba(134, 240, 226, 0.15);
-        --pafcci-badge-text: #86F0E2;
-        --pafcci-badge-border: rgba(134, 240, 226, 0.4);
-        --pafcci-online-bg: rgba(16, 185, 129, 0.12);
-        --pafcci-online-border: #10B981;
-        --pafcci-online-text: #10B981;
-        --pafcci-offline-bg: #1A2333;
-        --pafcci-offline-border: #2A3548;
-        --pafcci-offline-text: #94A3B8;
-        --pafcci-code-bg: #1A2333;
-        --pafcci-code-text: #86F0E2;
-        --pafcci-code-border: #2A3548;
-        --pafcci-input-bg: #111827;
-        --pafcci-table-even-bg: #0E1626;
-        --pafcci-table-hover-bg: #1E293B;
-        --pafcci-alert-success-bg: rgba(16, 185, 129, 0.12);
-        --pafcci-alert-error-bg: rgba(239, 68, 68, 0.12);
-        --pafcci-alert-warn-bg: rgba(245, 158, 11, 0.12);
-        --pafcci-alert-info-bg: rgba(56, 189, 248, 0.12);
-        --pafcci-risk-critical-bg: rgba(220, 38, 38, 0.28);
-        --pafcci-risk-critical-text: #FCA5A5;
-        --pafcci-risk-high-bg: rgba(234, 88, 12, 0.28);
-        --pafcci-risk-high-text: #FDBA74;
-        --pafcci-risk-medium-bg: rgba(217, 119, 6, 0.28);
-        --pafcci-risk-medium-text: #FDE68A;
-        --pafcci-risk-low-bg: rgba(22, 163, 74, 0.28);
-        --pafcci-risk-low-text: #86EFAC;
-        --pafcci-img-filter: brightness(0) saturate(100%) invert(88%) sepia(21%) saturate(928%) hue-rotate(113deg) brightness(98%) contrast(93%);
-    }
 }
 
 /* ── Base & Background ─────────────────────────────────────────────────────── */
@@ -962,7 +858,6 @@ def _show_loading_screen():
     """, height=0, width=0)
 
 # ── Session State Init ────────────────────────────────────────────────────────
-if "theme_mode"        not in st.session_state: st.session_state.theme_mode        = "dark"
 if "running"           not in st.session_state: st.session_state.running           = False
 if "crew"              not in st.session_state: st.session_state.crew              = None
 if "cycle_count"       not in st.session_state: st.session_state.cycle_count       = 0
@@ -984,8 +879,8 @@ if "selected_officer_key"     not in st.session_state: st.session_state.selected
 if "last_generated_otp"       not in st.session_state: st.session_state.last_generated_otp       = None
 if "last_otp_user"            not in st.session_state: st.session_state.last_otp_user            = None
 
-# ── Instant Audio Listener & Theme Synchronizer ────────────────────────────────
-_setup_audio_listeners(st.session_state.theme_mode)
+# ── Instant Audio Listener & Dark Theme Enforcer ───────────────────────────────
+_setup_audio_listeners()
 
 # ── Initial Loading Splash ───────────────────────────────────────────────────
 if not st.session_state._app_loaded:
@@ -1181,30 +1076,6 @@ with st.sidebar:
         if st.button("🗑️ Clear All Portal Data", type="secondary", use_container_width=True, key="clear_data_btn"):
             confirm_clear_dialog()
 
-    # ── Appearance / View Mode Switcher ───────────────────────────────────────
-    st.markdown("---")
-    st.markdown('<div class="pafcci-section-label">APPEARANCE / VIEW MODE</div>', unsafe_allow_html=True)
-    _th_col1, _th_col2 = st.columns(2)
-    with _th_col1:
-        if st.button(
-            "🌙 Dark",
-            key="btn_theme_dark",
-            use_container_width=True,
-            type="primary" if st.session_state.theme_mode == "dark" else "secondary",
-        ):
-            if st.session_state.theme_mode != "dark":
-                st.session_state.theme_mode = "dark"
-                st.rerun()
-    with _th_col2:
-        if st.button(
-            "☀️ Light",
-            key="btn_theme_light",
-            use_container_width=True,
-            type="primary" if st.session_state.theme_mode == "light" else "secondary",
-        ):
-            if st.session_state.theme_mode != "light":
-                st.session_state.theme_mode = "light"
-                st.rerun()
 
 # ── App-Level Section Router ──────────────────────────────────────────────────
 if st.session_state.app_section == "portal":

@@ -22,3 +22,4 @@ fastReruns          = true
 
 [client]
 showSidebarNavigation = false
+toolbarMode           = "viewer"

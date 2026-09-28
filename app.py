@@ -28,17 +28,8 @@ _APP_DIR = Path(__file__).resolve().parent
 
 def is_dark_theme() -> bool:
     """Detect if Streamlit is currently running in dark mode."""
-    try:
-        if hasattr(st, "context") and hasattr(st.context, "theme"):
-            theme_obj = st.context.theme
-            t = theme_obj.get("type") if isinstance(theme_obj, dict) else getattr(theme_obj, "type", None)
-            if t == "dark":
-                return True
-            if t == "light":
-                return False
-    except Exception:
-        pass
-    return False
+    return st.session_state.get("theme_mode", "dark") == "dark"
+
 
 def get_risk_cell_style(val: str) -> str:
     """Return styling for dataframe risk level cells adapting cleanly to dark vs light mode."""
@@ -56,7 +47,7 @@ def get_risk_cell_style(val: str) -> str:
         "LOW":      "background-color: #DCFCE7; color: #15803D; font-weight: bold;",
     }.get(val, "")
 
-def _setup_audio_listeners():
+def _setup_audio_listeners(theme_mode: str = "dark"):
     """Inject instant client-side audio listener and dual-theme real-time synchronizer.
     Plays sound_save.mp3 on START and STOP.
     Plays sound_click.mp3 on any other button interaction.
@@ -82,35 +73,7 @@ def _setup_audio_listeners():
 
             // ── Real-Time Dual-Theme Synchronizer ─────────────────────────────
             function detectTheme() {{
-                try {{
-                    var pathKey = 'stActiveTheme-' + (targetWin.location.pathname || '/');
-                    var v2Key = pathKey + '-v2';
-                    var raw = targetWin.localStorage.getItem(v2Key) || targetWin.localStorage.getItem(pathKey);
-                    if (raw) {{
-                        var parsed = JSON.parse(raw);
-                        if (parsed && parsed.name === 'Dark') return 'dark';
-                        if (parsed && parsed.name === 'Light') return 'light';
-                    }}
-                }} catch (e) {{}}
-
-                try {{
-                    var elem = targetDoc.querySelector('.stApp') || targetDoc.querySelector('[data-testid="stAppViewContainer"]') || targetDoc.body;
-                    if (elem) {{
-                        var bg = targetWin.getComputedStyle(elem).backgroundColor;
-                        if (bg) {{
-                            var m = bg.match(/\\d+/g);
-                            if (m && m.length >= 3) {{
-                                var lum = (parseInt(m[0])*299 + parseInt(m[1])*587 + parseInt(m[2])*114) / 1000;
-                                return lum < 128 ? 'dark' : 'light';
-                            }}
-                        }}
-                    }}
-                }} catch (e) {{}}
-
-                if (targetWin.matchMedia && targetWin.matchMedia('(prefers-color-scheme: dark)').matches) {{
-                    return 'dark';
-                }}
-                return 'light';
+                return "{theme_mode}";
             }}
 
             function syncTheme() {{
@@ -954,11 +917,8 @@ def _show_loading_screen():
     </script>
     """, height=0, width=0)
 
-# ── Instant Audio Listener Setup ──────────────────────────────────────────────
-_setup_audio_listeners()
-
-
 # ── Session State Init ────────────────────────────────────────────────────────
+if "theme_mode"        not in st.session_state: st.session_state.theme_mode        = "dark"
 if "running"           not in st.session_state: st.session_state.running           = False
 if "crew"              not in st.session_state: st.session_state.crew              = None
 if "cycle_count"       not in st.session_state: st.session_state.cycle_count       = 0
@@ -979,6 +939,9 @@ if "app_section"              not in st.session_state: st.session_state.app_sect
 if "selected_officer_key"     not in st.session_state: st.session_state.selected_officer_key     = list(AUTHORITY_USERS.keys())[0]
 if "last_generated_otp"       not in st.session_state: st.session_state.last_generated_otp       = None
 if "last_otp_user"            not in st.session_state: st.session_state.last_otp_user            = None
+
+# ── Instant Audio Listener & Theme Synchronizer ────────────────────────────────
+_setup_audio_listeners(st.session_state.theme_mode)
 
 # ── Initial Loading Splash ───────────────────────────────────────────────────
 if not st.session_state._app_loaded:
@@ -1173,6 +1136,31 @@ with st.sidebar:
 
         if st.button("🗑️ Clear All Portal Data", type="secondary", use_container_width=True, key="clear_data_btn"):
             confirm_clear_dialog()
+
+    # ── Appearance / View Mode Switcher ───────────────────────────────────────
+    st.markdown("---")
+    st.markdown('<div class="pafcci-section-label">APPEARANCE / VIEW MODE</div>', unsafe_allow_html=True)
+    _th_col1, _th_col2 = st.columns(2)
+    with _th_col1:
+        if st.button(
+            "🌙 Dark",
+            key="btn_theme_dark",
+            use_container_width=True,
+            type="primary" if st.session_state.theme_mode == "dark" else "secondary",
+        ):
+            if st.session_state.theme_mode != "dark":
+                st.session_state.theme_mode = "dark"
+                st.rerun()
+    with _th_col2:
+        if st.button(
+            "☀️ Light",
+            key="btn_theme_light",
+            use_container_width=True,
+            type="primary" if st.session_state.theme_mode == "light" else "secondary",
+        ):
+            if st.session_state.theme_mode != "light":
+                st.session_state.theme_mode = "light"
+                st.rerun()
 
 # ── App-Level Section Router ──────────────────────────────────────────────────
 if st.session_state.app_section == "portal":

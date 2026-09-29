@@ -2126,302 +2126,6 @@ with col_main:
                         st.info("Changes discarded and session closed.")
                         st.rerun()
 
-        # ── Delivery Sub-tabs ──────────────────────────────────────────────────
-        dtab_civ, dtab_auth, dtab_bank, dtab_appeal = st.tabs([
-            "📢 Civilian Advisories",
-            "🛡️ Authority Review Queue (Phone/IP)",
-            "🏦 Bank Fraud Queues",
-            "⚖️ Recourse & Appeals Console",
-        ])
-
-        # ── Sub-tab 1: Civilian Advisories ─────────────────────────────────────
-        with dtab_civ:
-            st.markdown("#### 📢 Regional Civilian Safety Advisories")
-            st.caption(
-                "Issued only when regional aggregate risk exceeds threshold. "
-                "**STRICT PRIVACY GUARANTEE**: Contains generic regional guidance only — NO phone numbers, IPs, or accounts."
-            )
-            if not _civ_alerts:
-                st.info("No regions currently exceed the regional risk threshold, or alerts are currently suppressed by active 24h cooldown.")
-            else:
-                for alert in _civ_alerts:
-                    st.markdown(
-                        f"<div style='background:#121d33;border-left:5px solid #ff8800;"
-                        f"padding:14px;border-radius:6px;margin-bottom:12px;'>"
-                        f"<h5 style='margin:0 0 8px 0;color:#ff8800;'>{alert['region']} (Regional Risk Score: {alert['regional_risk_score']:.3f})</h5>"
-                        f"<pre style='font-family:monospace;white-space:pre-wrap;color:#e0e0e0;margin:0;'>{alert['alert_text']}</pre>"
-                        f"<div style='margin-top:8px;font-size:11px;color:#888;'>"
-                        f"🔒 Privacy Guard: No per-entity data disclosed · ⏱️ 24h Cooldown Active until {(datetime.now(IST)+timedelta(hours=24)).strftime('%H:%M IST')}"
-                        f"</div></div>",
-                        unsafe_allow_html=True,
-                    )
-
-        # ── Sub-tab 2: Authority Queue (Phone/IP) — Sliding Table Layout ────────
-        with dtab_auth:
-            st.markdown("#### 🛡️ Cyber Crime Authority — Manual Review Queue")
-            st.caption("MANDATORY HUMAN REVIEW: Review queued entities in the sliding matrix (columns 1 to N). Select a column below to inspect forensic evidence and record an officer action.")
-
-            _live_auth_items = _appeals_mgr.get_by_recipient("authority")
-
-            if not _live_auth_items:
-                st.info("No phone or IP entities currently queued for authority review.")
-            else:
-                # Top Filter & Status Counters
-                fcol1, fcol2, fcol3 = st.columns([2, 2, 3])
-                with fcol1:
-                    _status_filter = st.selectbox(
-                        "Status Filter",
-                        ["All Statuses", "pending_review", "appealed", "actioned", "dismissed", "resolved"],
-                        key="auth_st_filter",
-                    )
-                with fcol2:
-                    _type_filter = st.selectbox(
-                        "Entity Type",
-                        ["All Types", "phone", "ip"],
-                        key="auth_type_filter",
-                    )
-                with fcol3:
-                    p_count = sum(1 for i in _live_auth_items if i["status"] == "pending_review")
-                    a_count = sum(1 for i in _live_auth_items if i["status"] == "appealed")
-                    d_count = sum(1 for i in _live_auth_items if i["status"] in ("actioned", "dismissed", "resolved"))
-                    st.markdown(
-                        f"<div style='padding-top:24px;font-size:12px;'>"
-                        f"🔴 <b>Pending:</b> {p_count} &nbsp;|&nbsp; "
-                        f"⚖️ <b>Appealed:</b> {a_count} &nbsp;|&nbsp; "
-                        f"✅ <b>Completed:</b> {d_count}</div>",
-                        unsafe_allow_html=True,
-                    )
-
-                # Filter and rank items
-                _filtered_items = list(_live_auth_items)
-                if _status_filter != "All Statuses":
-                    _filtered_items = [i for i in _filtered_items if i["status"] == _status_filter]
-                if _type_filter != "All Types":
-                    _filtered_items = [i for i in _filtered_items if i["entity_type"] == _type_filter]
-
-                # Sort descending by risk score
-                _filtered_items = sorted(_filtered_items, key=lambda x: x.get("risk_level", 0.0), reverse=True)
-
-                if not _filtered_items:
-                    st.info("No queued items match the selected filters.")
-                else:
-                    N_auth = len(_filtered_items)
-
-                    # Build Sliding Table Data (Row headers stay fixed, Column headers are Tracker IDs)
-                    auth_row_labels = [
-                        "Entity ID",
-                        "Entity Type",
-                        "Current Status",
-                        "Risk Score",
-                        "Risk Level",
-                        "Region",
-                        "Dispute Filed?",
-                        "Signals Triggered",
-                        "Registered At",
-                    ]
-
-                    auth_col_data = {}
-                    for idx, item in enumerate(_filtered_items):
-                        col_key = item["tracking_id"]
-                        st_raw = item["status"]
-                        st_display = (
-                            "🔴 PENDING_REVIEW" if st_raw == "pending_review" else
-                            "⚖️ APPEALED" if st_raw == "appealed" else
-                            "✅ ACTIONED" if st_raw == "actioned" else
-                            "⚪ DISMISSED" if st_raw == "dismissed" else
-                            "✅ RESOLVED" if st_raw == "resolved" else st_raw.upper()
-                        )
-                        r_score = item.get("risk_level", 0.0)
-                        r_level = "CRITICAL" if r_score >= 0.85 else "HIGH" if r_score >= 0.70 else "MEDIUM"
-                        sig_names = ", ".join(s.get("signal_type", "") for s in item.get("signals_triggered", []))
-                        disp_str = f"⚠️ YES ({item.get('advocate_name', 'Filer')})" if item.get("dispute_reason") else "None"
-                        auth_col_data[col_key] = [
-                            item["entity_id"],
-                            item["entity_type"].upper(),
-                            st_display,
-                            f"{r_score:.3f}",
-                            r_level,
-                            item.get("region", "India Nationwide"),
-                            disp_str,
-                            sig_names or "None",
-                            item.get("created_at", "")[:19].replace("T", " "),
-                        ]
-
-                    df_sliding_auth = pd.DataFrame(auth_col_data, index=auth_row_labels)
-
-                    st.markdown(f"##### 📊 Review Matrix by Tracker ID ({N_auth} Entities)")
-                    st.caption("👈 Use horizontal scrollbar to slide across Tracker IDs. Click any column or Tracker ID to inspect forensic details and take officer action.")
-                    df_auth_selected = st.dataframe(
-                        df_sliding_auth,
-                        on_select="rerun",
-                        selection_mode="single-column",
-                        use_container_width=True,
-                        height=280,
-                        key="auth_df_matrix",
-                    )
-
-                    # Determine selected Tracker ID from column click or session state default
-                    _auth_trk_list = [x["tracking_id"] for x in _filtered_items]
-                    _clicked_auth_trk = None
-                    if df_auth_selected:
-                        sel = getattr(df_auth_selected, "selection", None)
-                        if sel is None and isinstance(df_auth_selected, dict):
-                            sel = df_auth_selected.get("selection")
-                        if sel:
-                            cols = getattr(sel, "columns", None)
-                            if cols is None and isinstance(sel, dict):
-                                cols = sel.get("columns", [])
-                            if cols and len(cols) > 0 and cols[0] in _auth_trk_list:
-                                _clicked_auth_trk = cols[0]
-
-                    if _clicked_auth_trk:
-                        st.session_state["selected_auth_trk"] = _clicked_auth_trk
-
-                    _cur_auth_trk = st.session_state.get("selected_auth_trk", _auth_trk_list[0])
-                    if _cur_auth_trk not in _auth_trk_list:
-                        _cur_auth_trk = _auth_trk_list[0]
-                        st.session_state["selected_auth_trk"] = _cur_auth_trk
-
-                    _s_item = next((x for x in _filtered_items if x["tracking_id"] == _cur_auth_trk), _filtered_items[0])
-
-                    st.markdown("---")
-
-                    # Inspection & Tracker Selection Header
-                    scol1, scol2 = st.columns([3, 1])
-                    with scol1:
-                        _def_auth_idx = _auth_trk_list.index(_cur_auth_trk)
-                        _chosen_auth_trk = st.selectbox(
-                            "🔎 Active Tracker ID (click a column above or select below):",
-                            _auth_trk_list,
-                            index=_def_auth_idx,
-                            key="auth_trk_select_dropdown",
-                        )
-                        if _chosen_auth_trk != _cur_auth_trk:
-                            _cur_auth_trk = _chosen_auth_trk
-                            st.session_state["selected_auth_trk"] = _cur_auth_trk
-                            _s_item = next((x for x in _filtered_items if x["tracking_id"] == _cur_auth_trk), _filtered_items[0])
-
-                    with scol2:
-                        st.markdown(
-                            f"<div style='padding-top:28px;font-size:13px;color:#00cc88;'>Active: <b>{_cur_auth_trk}</b> ({_auth_trk_list.index(_cur_auth_trk) + 1} of {len(_auth_trk_list)})</div>",
-                            unsafe_allow_html=True,
-                        )
-
-                    # Selected Item Details
-                    _s_status = _s_item["status"]
-                    _badge_color = {
-                        "pending_review": "#ff4b4b",
-                        "appealed":       "#ffd700",
-                        "actioned":       "#00cc88",
-                        "dismissed":      "#888888",
-                        "resolved":       "#00cc88",
-                    }.get(_s_status, "#888888")
-
-                    st.markdown(
-                        f"<div style='background:#12161f;border:1px solid {_badge_color};"
-                        f"border-left:5px solid {_badge_color};padding:14px;border-radius:6px;margin-bottom:12px;'>"
-                        f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
-                        f"<h5 style='margin:0;color:#fff;'>{_s_item['tracking_id']} | {_s_item['entity_type'].upper()}: {_s_item['entity_id']}</h5>"
-                        f"<span style='background:{_badge_color};color:#000;padding:4px 10px;border-radius:4px;font-weight:bold;font-size:12px;'>"
-                        f"{_s_status.upper()}</span></div>"
-                        f"<div style='font-size:12px;color:#aaa;margin-top:6px;'>"
-                        f"Tracking ID: <b>{_s_item['tracking_id']}</b> &nbsp;|&nbsp; Region: <b>{_s_item['region']}</b> &nbsp;|&nbsp; Risk Score: <b>{_s_item['risk_level']:.3f}</b>"
-                        f"</div></div>",
-                        unsafe_allow_html=True,
-                    )
-
-                    st.markdown(f"**Recommended Action:**\n{_s_item['recommended_action']}")
-
-                    if _s_item.get("dispute_reason"):
-                        st.warning(
-                            f"⚖️ **FORMAL DISPUTE FILED** ({_s_item.get('advocate_name', 'Filer')}):\n"
-                            f"{_s_item['dispute_reason']}"
-                        )
-
-                    with st.expander("🔬 Forensic Evidence & Signal Trail", expanded=False):
-                        for sig in _s_item.get("signals_triggered", []):
-                            st.markdown(f"• **Signal:** `{sig.get('signal_type')}` | **Sub-Score:** `{sig.get('sub_score', 0.0):.3f}`")
-                            ev_clean = {k: v for k, v in sig.get("evidence", {}).items() if k not in ("deposit_history", "deposit_timestamps")}
-                            if ev_clean:
-                                st.json(ev_clean)
-
-                    st.markdown("##### 👮 Officer Decision Panel")
-                    notes_input = st.text_input(
-                        "Officer Audit Notes / Remarks",
-                        placeholder="Enter notes for audit trail...",
-                        key=f"auth_notes_{_s_item['tracking_id']}",
-                    )
-
-                    bcol1, bcol2, bcol3 = st.columns(3)
-                    with bcol1:
-                        if st.button("🔴 Action: Block / Blacklist", key=f"auth_act_{_s_item['tracking_id']}", disabled=not bool(_cur_officer), use_container_width=True):
-                            _reviewer = _cur_officer["name"] if _cur_officer else "OFFICER-001"
-                            _appeals_mgr.update_status(_s_item["tracking_id"], "actioned", reviewer_id=_reviewer, notes=notes_input or "Officer approved block action.")
-                            st.session_state.dm_staged_actions.append({
-                                "tracking_id": _s_item["tracking_id"],
-                                "action_type": "BLOCK",
-                                "entity_id": _s_item["entity_id"],
-                                "timestamp": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST"),
-                            })
-                            st.success(f"Staged action: BLOCK on {_s_item['tracking_id']}. Click '💾 Commit Changes' above or commit on sign out.")
-                            st.rerun()
-                    with bcol2:
-                        if st.button("⚪ Whitelist Entity", key=f"auth_white_{_s_item['tracking_id']}", disabled=not bool(_cur_officer), use_container_width=True):
-                            _reviewer = _cur_officer["name"] if _cur_officer else "OFFICER-001"
-                            _appeals_mgr.update_status(_s_item["tracking_id"], "dismissed", reviewer_id=_reviewer, notes=notes_input or "Whitelisted after review.")
-                            st.session_state.dm_staged_actions.append({
-                                "tracking_id": _s_item["tracking_id"],
-                                "action_type": "WHITELIST",
-                                "entity_id": _s_item["entity_id"],
-                                "timestamp": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST"),
-                            })
-                            st.success(f"Staged action: WHITELIST on {_s_item['tracking_id']}.")
-                            st.rerun()
-                    with bcol3:
-                        if st.button("⚖️ Resolve Dispute", key=f"auth_res_{_s_item['tracking_id']}", disabled=(not bool(_cur_officer) or _s_status != "appealed"), use_container_width=True):
-                            _reviewer = _cur_officer["name"] if _cur_officer else "SENIOR-OFFICER-001"
-                            _appeals_mgr.update_status(_s_item["tracking_id"], "resolved", reviewer_id=_reviewer, notes=notes_input or "Senior dispute resolution complete.")
-                            st.session_state.dm_staged_actions.append({
-                                "tracking_id": _s_item["tracking_id"],
-                                "action_type": "RESOLVE_DISPUTE",
-                                "entity_id": _s_item["entity_id"],
-                                "timestamp": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST"),
-                            })
-                            st.success(f"Staged action: RESOLVE_DISPUTE on {_s_item['tracking_id']}.")
-                            st.rerun()
-
-                # Confirmation Dialog if signing out with uncommitted changes
-                if st.session_state.dm_show_signout_confirm:
-                    st.warning(
-                        f"⚠️ **Do you want to commit changes?**\n\n"
-                        f"You have **{len(st.session_state.dm_staged_actions)}** uncommitted action(s) in this session. "
-                        "Signing out without committing will discard these staged decisions."
-                    )
-                    cf_col1, cf_col2 = st.columns(2)
-                    with cf_col1:
-                        if st.button("Yes", type="primary", use_container_width=True, key="confirm_signout_yes2"):
-                            sign_out_user(
-                                _cur_officer["username"],
-                                commit_staged=True,
-                                staged_actions=st.session_state.dm_staged_actions,
-                            )
-                            st.session_state.dm_auth_officer = None
-                            st.session_state.dm_staged_actions = []
-                            st.session_state.dm_show_signout_confirm = False
-                            st.success("Changes committed to CSV and session closed.")
-                            st.rerun()
-                    with cf_col2:
-                        if st.button("No", type="secondary", use_container_width=True, key="confirm_signout_no2"):
-                            sign_out_user(
-                                _cur_officer["username"],
-                                commit_staged=False,
-                            )
-                            st.session_state.dm_auth_officer = None
-                            st.session_state.dm_staged_actions = []
-                            st.session_state.dm_show_signout_confirm = False
-                            st.info("Changes discarded and session closed.")
-                            st.rerun()
-
             # ── Delivery Sub-tabs ──────────────────────────────────────────────────
             dtab_civ, dtab_auth, dtab_bank, dtab_appeal = st.tabs([
                 "Civilian Advisories",
@@ -2468,13 +2172,13 @@ with col_main:
                         _status_filter = st.selectbox(
                             "Status Filter",
                             ["All Statuses", "pending_review", "appealed", "actioned", "dismissed", "resolved"],
-                            key="auth_st_filter2",
+                            key="auth_st_filter",
                         )
                     with fcol2:
                         _type_filter = st.selectbox(
                             "Entity Type",
                             ["All Types", "phone", "ip"],
-                            key="auth_type_filter2",
+                            key="auth_type_filter",
                         )
                     with fcol3:
                         p_count = sum(1 for i in _live_auth_items if i["status"] == "pending_review")
@@ -2553,7 +2257,7 @@ with col_main:
                             selection_mode="single-column",
                             use_container_width=True,
                             height=280,
-                            key="auth_df_matrix2",
+                            key="auth_df_matrix",
                         )
 
                         # Determine selected Tracker ID from column click or session state default
@@ -2590,7 +2294,7 @@ with col_main:
                                 "🔎 Active Tracker ID (click a column above or select below):",
                                 _auth_trk_list,
                                 index=_def_auth_idx,
-                                key="auth_trk_select_dropdown2",
+                                key="auth_trk_select_dropdown",
                             )
                             if _chosen_auth_trk != _cur_auth_trk:
                                 _cur_auth_trk = _chosen_auth_trk

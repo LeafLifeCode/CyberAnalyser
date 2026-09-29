@@ -2399,7 +2399,7 @@ with col_main:
                     )
                     cf_col1, cf_col2 = st.columns(2)
                     with cf_col1:
-                        if st.button("Yes", type="primary", use_container_width=True, key="confirm_signout_yes"):
+                        if st.button("Yes", type="primary", use_container_width=True, key="confirm_signout_yes2"):
                             sign_out_user(
                                 _cur_officer["username"],
                                 commit_staged=True,
@@ -2411,7 +2411,7 @@ with col_main:
                             st.success("Changes committed to CSV and session closed.")
                             st.rerun()
                     with cf_col2:
-                        if st.button("No", type="secondary", use_container_width=True, key="confirm_signout_no"):
+                        if st.button("No", type="secondary", use_container_width=True, key="confirm_signout_no2"):
                             sign_out_user(
                                 _cur_officer["username"],
                                 commit_staged=False,
@@ -2468,13 +2468,13 @@ with col_main:
                         _status_filter = st.selectbox(
                             "Status Filter",
                             ["All Statuses", "pending_review", "appealed", "actioned", "dismissed", "resolved"],
-                            key="auth_st_filter",
+                            key="auth_st_filter2",
                         )
                     with fcol2:
                         _type_filter = st.selectbox(
                             "Entity Type",
                             ["All Types", "phone", "ip"],
-                            key="auth_type_filter",
+                            key="auth_type_filter2",
                         )
                     with fcol3:
                         p_count = sum(1 for i in _live_auth_items if i["status"] == "pending_review")
@@ -2553,7 +2553,7 @@ with col_main:
                             selection_mode="single-column",
                             use_container_width=True,
                             height=280,
-                            key="auth_df_matrix",
+                            key="auth_df_matrix2",
                         )
 
                         # Determine selected Tracker ID from column click or session state default
@@ -2590,7 +2590,7 @@ with col_main:
                                 "🔎 Active Tracker ID (click a column above or select below):",
                                 _auth_trk_list,
                                 index=_def_auth_idx,
-                                key="auth_trk_select_dropdown",
+                                key="auth_trk_select_dropdown2",
                             )
                             if _chosen_auth_trk != _cur_auth_trk:
                                 _cur_auth_trk = _chosen_auth_trk
